@@ -1,4 +1,4 @@
-  const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
   const axios = require('axios');
 
   // Environment variables
@@ -11,11 +11,12 @@
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.DirectMessages,
     ],
   });
 
   // Bot ready event
-  client.once('ready', () => {
+  client.once('clientReady', () => {
     console.log(`✅ Makoto-kun is online as ${client.user.tag}!`);
   });
 
@@ -24,11 +25,18 @@
     // Ignore messages from bots
     if (message.author.bot) return;
 
+    console.log(`📩 Received message from ${message.author.tag}: ${message.content}`);
+
     // Only respond to messages that mention the bot or are DMs
     const isMentioned = message.mentions.has(client.user);
-    const isDM = message.channel.type === 'DM';
+    const isDM = message.channel.type === ChannelType.DM;
 
-    if (!isMentioned && !isDM) return;
+    if (!isMentioned && !isDM) {
+      console.log('❌ Message ignored - not a mention or DM');
+      return;
+    }
+
+    console.log('✅ Processing message...');
 
     // Show typing indicator
     await message.channel.sendTyping();
@@ -40,11 +48,15 @@
         userMessage = userMessage.replace(`<@${client.user.id}>`, '').trim();
       }
 
+      console.log(`📤 Sending to n8n: ${userMessage}`);
+
       // Send message to n8n webhook
       const response = await axios.post(N8N_WEBHOOK_URL, {
         chatInput: userMessage,
-        sessionId: message.author.id, // Use user ID for session continuity
+        sessionId: message.author.id,
       });
+
+      console.log(`📥 Received from n8n: ${response.data}`);
 
       // Get response from n8n
       const botReply = response.data;
@@ -58,8 +70,13 @@
       } else {
         await message.reply(botReply);
       }
+
+      console.log('✅ Response sent successfully');
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error.message);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+      }
       await message.reply('Sorry, I encountered an error. Please try again!');
     }
   });
