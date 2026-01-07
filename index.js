@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, ChannelType } = require('discord.js');
   const axios = require('axios');
 
   // Environment variables
@@ -13,10 +13,11 @@ const { Client, GatewayIntentBits, ChannelType } = require('discord.js');
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.DirectMessages,
     ],
+    partials: [Partials.Channel, Partials.Message],
   });
 
   // Bot ready event
-  client.once('clientReady', () => {
+  client.once('ready', () => {
     console.log(`✅ Makoto-kun is online as ${client.user.tag}!`);
   });
 
